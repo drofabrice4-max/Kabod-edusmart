@@ -1,5 +1,8 @@
 name: EduSmart CI Auto-Update SOPHIA
 
+permissions:
+  contents: write
+
 on:
   schedule:
     - cron: '0 2 * * *'
