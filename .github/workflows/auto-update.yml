@@ -1,4 +1,4 @@
-name: EduSmart Auto-Update
+name: EduSmart CI Auto-Update SOPHIA
 
 on:
   schedule:
@@ -13,13 +13,13 @@ jobs:
         uses: actions/checkout@v4
         
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           
       - name: Install dependencies
         run: |
-          pip install openai
+          pip install openai --quiet
           
       - name: Generate 3 new courses
         env:
@@ -29,14 +29,15 @@ jobs:
           
       - name: Commit and push
         run: |
-          git config user.name "EduSmart Agents IA"
-          git config user.email "agents@edusmart.ci"
+          git config user.name "SOPHIA Bot"
+          git config user.email "sophia@edusmart.ci"
           git add courses.json
-          git diff --staged --quiet || git commit -m "Auto: +3 cours - $(date +%Y-%m-%d)"
+          git diff --staged --quiet || git commit -m "Auto SOPHIA: +3 cours - $(date +%Y-%m-%d)"
           git push
           
       - name: Trigger Netlify deploy
+        if: always()
         env:
           NETLIFY_HOOK: ${{ secrets.NETLIFY_BUILD_HOOK }}
         run: |
-          curl -X POST $NETLIFY_HOOK
+          if [ -n "$NETLIFY_HOOK" ]; then curl -X POST $NETLIFY_HOOK; else echo "No hook"; fi
