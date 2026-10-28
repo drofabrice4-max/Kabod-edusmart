@@ -1,0 +1,42 @@
+name: EduSmart Auto-Update
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  generate-courses:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          pip install openai
+          
+      - name: Generate 3 new courses
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          python agents/generate.py --count 3
+          
+      - name: Commit and push
+        run: |
+          git config user.name "EduSmart Agents IA"
+          git config user.email "agents@edusmart.ci"
+          git add courses.json
+          git diff --staged --quiet || git commit -m "Auto: +3 cours - $(date +%Y-%m-%d)"
+          git push
+          
+      - name: Trigger Netlify deploy
+        env:
+          NETLIFY_HOOK: ${{ secrets.NETLIFY_BUILD_HOOK }}
+        run: |
+          curl -X POST $NETLIFY_HOOK
