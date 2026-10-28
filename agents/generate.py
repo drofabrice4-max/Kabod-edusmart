@@ -1,122 +1,116 @@
-"""
-EduSmart Content Forge - Génère 3 nouveaux cours par jour
-Utilise OpenAI pour générer du contenu conforme programme CI
-"""
-import json
 import os
+import json
 import random
-from pathlib import Path
+from datetime import datetime
 
-# Programme manquant à générer (exemples)
-CURRICULUM_MANQUANT = [
-    {"niveau": "6e", "matiere": "Maths", "chapitre": "Nombres décimaux"},
-    {"niveau": "6e", "matiere": "Français", "chapitre": "Le dialogue"},
-    {"niveau": "5e", "matiere": "Maths", "chapitre": "Calcul littéral"},
-    {"niveau": "4e", "matiere": "Maths", "chapitre": "Racines carrées"},
-    {"niveau": "3e", "matiere": "Maths", "chapitre": "Vecteurs"},
-    {"niveau": "2nde", "matiere": "Maths", "chapitre": "Trigonométrie"},
-    {"niveau": "1ere", "matiere": "Maths", "chapitre": "Barycentre"},
-    {"niveau": "Tle A", "matiere": "Philosophie", "chapitre": "Le temps"},
-    {"niveau": "Tle C", "matiere": "Maths", "chapitre": "Equations différentielles"},
-    {"niveau": "Tle D", "matiere": "SVT", "chapitre": "Ecologie"},
-]
+def generer_cours_template(niveau, matiere, chapitre):
+    """Génère un cours sans OpenAI - mode template avec figures"""
+    exercices = [
+        {"enonce": f"Exercice 1: Calcule {chapitre} avec les données du marché d'Adjamé", "solution": "Solution détaillée étape par étape avec exemple ivoirien"},
+        {"enonce": f"Exercice 2: Application pratique de {chapitre}", "solution": "Résolution avec schéma"},
+        {"enonce": f"Exercice 3: Problème complexe sur {chapitre}", "solution": "Méthode + astuce BEPC/BAC"},
+    ]
+    
+    figures_svg = f'''<svg width="300" height="200" xmlns="http://www.w3.org/2000/svg"><rect width="300" height="200" fill="#DBEAFE" rx="10"/><text x="150" y="100" text-anchor="middle" font-size="14" fill="#1e40af">{chapitre}</text><polygon points="50,150 150,50 250,150" fill="#BBF7D0" stroke="#166534" stroke-width="2"/></svg>'''
+    
+    contenu = f"""
+    <h2>{chapitre} - {matiere} {niveau}</h2>
+    <div style="background:#DBEAFE;padding:12px;border-radius:10px;margin:10px 0">
+    <p><b>Définition :</b> {chapitre} est un concept clé du programme ivoirien.</p>
+    </div>
+    {figures_svg}
+    <h3>📚 Cours détaillé</h3>
+    <p>Exemple du marché d'Abidjan : Si un commerçant vend de l'attiéké...</p>
+    <div style="background:#DCFCE7;padding:12px;border-radius:10px;margin:10px 0">
+    <p><b>Formule :</b> Application pratique avec données ivoiriennes</p>
+    </div>
+    <h3>✏️ Série d'exercices (5 exercices)</h3>
+    <div style="background:#FEF3C7;padding:10px;border-radius:8px;margin:5px 0"><b>Ex 1:</b> {exercices[0]['enonce']}<br><b>Solution:</b> {exercices[0]['solution']}</div>
+    <div style="background:#FCE7F3;padding:10px;border-radius:8px;margin:5px 0"><b>Ex 2:</b> {exercices[1]['enonce']}<br><b>Solution:</b> {exercices[1]['solution']}</div>
+    <div style="background:#E9D5FF;padding:10px;border-radius:8px;margin:5px 0"><b>Ex 3:</b> {exercices[2]['enonce']}<br><b>Solution:</b> {exercices[2]['solution']}</div>
+    <h3>🎯 Pour retenir</h3>
+    <ul><li>{chapitre} - astuce BEPC</li><li>Exemple Adjamé</li><li>Formule à retenir</li></ul>
+    """
+    
+    return {
+        "id": f"{niveau}-{matiere}-{random.randint(1000,9999)}",
+        "niveau": niveau,
+        "matiere": matiere,
+        "titre": chapitre,
+        "chapitre": chapitre,
+        "contenu": contenu,
+        "duree": "45 min",
+        "difficulte": random.choice(["Facile", "Moyen", "Difficile"]),
+        "date": datetime.now().isoformat()
+    }
 
 def generer_cours_avec_openai(niveau, matiere, chapitre):
-    """Génère un cours avec OpenAI ou template si pas de clé"""
+    """Essaie OpenAI, sinon fallback template SANS RECURSION"""
     api_key = os.getenv("OPENAI_API_KEY")
     
     if not api_key:
-        # Mode template si pas de clé (pour test)
-        return {
-            "niveau": niveau,
-            "matiere": matiere,
-            "chapitre": chapitre,
-            "titre": f"{niveau} - {matiere} - {chapitre}",
-            "contenu": f"# {chapitre}\n\n## Introduction ivoirienne\nExemple avec marché d'Abidjan...\n\n## Définitions\nCours de {matiere} {niveau} sur {chapitre} - Programme officiel CI\n\n## Exemples\nExemple 1: ...\n\n## Exercices\n1. Exercice...\nCorrigé: ...",
-            "duree": "45 min",
-            "difficulte": "Moyen",
-            "status": "generated",
-            "progress": 100,
-            "agent": "Content Forge"
-        }
+        print(f"Pas de clé OpenAI, mode template pour {chapitre}")
+        return generer_cours_template(niveau, matiere, chapitre)
     
-    # Avec OpenAI - vrai génération
     try:
         from openai import OpenAI
         client = OpenAI(api_key=api_key)
-        
-        prompt = f"""Génère un cours complet pour {niveau} {matiere} - {chapitre}
-Programme officiel Côte d'Ivoire.
-Structure: Introduction ivoirienne (marché, attiéké...), Définitions, Formules, 2 exemples résolus étape par étape, 3 exercices avec corrigés, Astuce BEPC/BAC.
-Langage simple pour élève {niveau}. Utilise exemples locaux Côte d'Ivoire.
-Retourne en markdown.
-"""
-        
+        prompt = f"Génère un cours détaillé de {matiere} {niveau} sur {chapitre} avec 5 exercices, figures SVG, exemples ivoiriens (marché Adjamé, attiéké), programme CI"
         response = client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=2000
+            max_tokens=2000,
+            timeout=30
         )
-        
         contenu = response.choices[0].message.content
-        
         return {
+            "id": f"{niveau}-{matiere}-{random.randint(1000,9999)}",
             "niveau": niveau,
             "matiere": matiere,
+            "titre": chapitre,
             "chapitre": chapitre,
-            "titre": f"{niveau} - {matiere} - {chapitre}",
             "contenu": contenu,
             "duree": "45 min",
             "difficulte": "Moyen",
-            "status": "generated",
-            "progress": 100,
-            "agent": "Content Forge - OpenAI"
+            "date": datetime.now().isoformat()
         }
     except Exception as e:
-        print(f"Erreur OpenAI: {e}, utilisation template")
-        return generer_cours_avec_openai(niveau, matiere, chapitre)  # fallback sans clé
+        print(f"Erreur OpenAI {e}, fallback template")
+        return generer_cours_template(niveau, matiere, chapitre)
 
 def main():
+    count = 3
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--count", type=int, default=3)
     args = parser.parse_args()
+    count = args.count
     
-    # Charger courses.json existant
-    courses_path = Path("courses.json")
-    if courses_path.exists():
-        data = json.loads(courses_path.read_text(encoding="utf-8"))
-        courses = data.get("courses", [])
-    else:
+    print(f"Génération de {count} cours...")
+    
+    try:
+        with open("courses.json", "r", encoding="utf-8") as f:
+            data = json.load(f)
+            courses = data.get("courses", [])
+    except:
         courses = []
     
-    print(f"Cours existants: {len(courses)}")
+    niveaux = ["6e", "5e", "4e", "3e", "2nde", "1ere", "Tle A", "Tle C", "Tle D"]
+    matieres = ["Maths", "Physique", "SVT", "Français", "Anglais", "Histoire-Géo"]
+    chapitres = ["Pythagore - Figures colorées", "Vecteurs et translation", "Équations quadratiques", "Thalès avec figures", "Fonctions avec graphiques", "Élasticité avec schémas"]
     
-    # Générer X nouveaux cours
-    existants_chapitres = {f"{c['niveau']}|{c['matiere']}|{c['chapitre']}".lower() for c in courses}
+    for i in range(count):
+        niveau = random.choice(niveaux)
+        matiere = random.choice(matieres)
+        chapitre = random.choice(chapitres)
+        cours = generer_cours_avec_openai(niveau, matiere, chapitre)
+        courses.append(cours)
+        print(f"Cours {i+1}/{count}: {chapitre} OK")
     
-    nouveaux = []
-    for _ in range(args.count):
-        # Choisir un cours manquant
-        candidats = [c for c in CURRICULUM_MANQUANT if f"{c['niveau']}|{c['matiere']}|{c['chapitre']}".lower() not in existants_chapitres]
-        if not candidats:
-            candidats = CURRICULUM_MANQUANT
-        
-        choix = random.choice(candidats)
-        print(f"Génération: {choix}")
-        
-        cours = generer_cours_avec_openai(choix["niveau"], choix["matiere"], choix["chapitre"])
-        cours["id"] = len(courses) + len(nouveaux) + 1
-        nouveaux.append(cours)
-        existants_chapitres.add(f"{choix['niveau']}|{choix['matiere']}|{choix['chapitre']}".lower())
+    with open("courses.json", "w", encoding="utf-8") as f:
+        json.dump({"courses": courses, "total": len(courses), "updated": datetime.now().isoformat()}, f, ensure_ascii=False, indent=2)
     
-    # Ajouter aux existants
-    courses.extend(nouveaux)
-    
-    # Sauvegarder
-    courses_path.write_text(json.dumps({"courses": courses, "total": len(courses), "last_update": "auto"}, ensure_ascii=False, indent=2), encoding="utf-8")
-    
-    print(f"✅ {len(nouveaux)} nouveaux cours générés. Total: {len(courses)}")
+    print(f"Total: {len(courses)} cours")
 
 if __name__ == "__main__":
     main()
