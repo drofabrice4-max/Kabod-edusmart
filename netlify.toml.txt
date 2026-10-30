@@ -1,0 +1,17 @@
+[build]
+  publish = "."
+  command = ""
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+# Pour que les routes /3e/Maths etc marchent en SPA
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
